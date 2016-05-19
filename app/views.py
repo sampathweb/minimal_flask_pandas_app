@@ -35,3 +35,15 @@ def index():
     #     formatters={'actual': custom_format}, index=False).replace('border="1"','border="0"')
     return render_template('index.html',
         data_table=table_html, plot_png=plot_png)
+
+@app.route('/d3-var1/')
+def d3_var1():
+    df = pd.read_table("app/data/jobs.tsv")
+    table_html = (df.head(20)
+                    .to_html(classes=['u-full-width'], index=False)
+                    .replace('border="1"','border="0"')
+                )
+
+    data_json = df.to_json(orient="records")
+    return render_template('d3-var1.html', data_json=data_json, data_table=table_html)
+

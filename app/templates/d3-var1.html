@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{%block header %}
+  <style>
+    svg {
+      border:1px solid #f0f;
+    }
+    .axis line,
+    .axis path {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+
+    .line {
+      fill: none;
+      stroke: steelblue;
+      stroke-width: 2px;
+    }
+    .bars {
+      stroke: #000;
+      stroke-width: 4;
+    }
+    .good {
+      stroke: #00f;
+    }
+    .bad {
+      stroke: #f00;
+    }
+  </style>
+{% endblock header %}
+
+{% block body %}
+  <h1>D3 and Pandas Table</h1>
+  <div id="viz">
+
+  </div>
+  <div class="row">
+    {{data_table | safe}}
+  </div>
+{% endblock body %}
+
+{% block js %}
+  <script type="text/javascript">
+    var data = {{ data_json | safe }};
+
+
+    // Feel free to change or delete any of the code you see!
+    var margin = {top: 20, right: 20, bottom: 30, left: 50},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    var svg = d3.select("#viz").append("svg")
+                  .attr({
+                    width: width + margin.left + margin.right,
+                    height: height + margin.top + margin.bottom
+                  })
+                .append("g")
+                .attr("transform", "translate(" + [margin.left, margin.top] + ")");
+    var xscale = d3.time.scale()
+                    .range([0, width]);
+    var yscale = d3.scale.linear()
+                    .range([height, 0]);
+
+    var yscaleJobChange = d3.scale.linear()
+                          .range([height, 0]);
+
+    var xaxis = d3.svg.axis()
+                  .scale(xscale)
+                  .orient("bottom")
+                  .ticks(5)
+                  .tickFormat(d3.time.format("%Y-%b"));
+
+    var yaxis = d3.svg.axis()
+                  .scale(yscale)
+                  .orient("right");
+
+    var yaxisJobChange = d3.svg.axis()
+                        .scale(yscaleJobChange)
+                        .orient("left");
+
+    function draw (data) {
+      // Convert string to numbers
+      data.forEach(function(d) {
+        d.jobs_change = +d.jobs_change;
+        d.date = new Date(d.month_year);
+        d.private_job_change = +d.private_job_change;
+        d.unemployment_rate = +d.unemployment_rate;
+      });
+
+      console.log(data);
+      xscale.domain(d3.extent(data, function(d) { return d.date; }));
+      yscale.domain([0, d3.max(data, function(d) { return d.unemployment_rate; })]);
+      yscaleJobChange.domain(d3.extent(data, function(d) { return d.jobs_change; }));
+      var line = d3.svg.line()
+                  .x(function(d) { return xscale(d.date); })
+                  .y(function(d) { return yscale(d.unemployment_rate);});
+
+      svg.selectAll("path.line")
+        .data([data])
+        .enter()
+          .append("path")
+          .attr("class", "line")
+          .attr("d", line);
+
+      svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(" + [0, height] + ")")
+          .call(xaxis);
+
+      svg.append("g")
+          .attr("class", "y axis")
+          .call(yaxisJobChange);
+
+      svg.append("g")
+          .attr("class", "y axis")
+          .attr("transform", "translate(" + [width, 0] + ")")
+          .call(yaxis);
+
+      svg.selectAll("circle.rate")
+        .data(data)
+        .enter()
+          .append("circle")
+          .attr({
+            "class": "rate",
+            "cx": function(d) { return xscale(d.date); },
+            "cy": function(d) { return yscale(d.unemployment_rate); },
+            "r": 2
+      });
+
+      svg.selectAll("line.bars")
+        .data(data)
+        .enter()
+          .append("line")
+          .attr({
+            "class": function(d) {
+                return yscaleJobChange(d.jobs_change) < yscaleJobChange(0) ? "bars good" : "bars bad";
+            },
+            "x1": function(d) { return xscale(d.date); },
+            "y1": yscaleJobChange(0),
+            "x2": function(d) { return xscale(d.date); },
+            "y2": function(d) { return yscaleJobChange(d.jobs_change)}
+      })
+
+    };
+
+    draw(data);
+
+
+  </script>
+{% endblock js %}
