@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block body %}
+  <h1>MatPlotlib Plot and Pandas Table</h1>
+  <div>
+    <img src="/static/temp/{{plot_png}}" width=960 height=500 />
+  </div>
+  <div>
+    {{data_table | safe}}
+  </div>
+{% endblock body %}
